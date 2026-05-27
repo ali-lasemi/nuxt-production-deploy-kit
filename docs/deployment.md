@@ -81,3 +81,12 @@ docker run -d -p 3000:3000 --name nuxt-app nuxt-app
 ```bash
 docker compose -f examples/docker/docker-compose.yml up -d
 ```
+---
+
+# Release Cleanup
+
+Keep only the latest releases to prevent disk usage growth.
+
+```bash
+KEEP_RELEASES=5 ./scripts/cleanup-releases.sh
+```

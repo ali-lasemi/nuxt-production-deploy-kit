@@ -18,7 +18,7 @@
 - [ ] Docker deployment example
 - [ ] Zero-downtime deployment workflow
 - [ ] Blue/green deployment strategy
-- [ ] Release retention cleanup script
+- [x] Release retention cleanup script
 - [ ] Environment file examples
 - [ ] Production security hardening guide
 
