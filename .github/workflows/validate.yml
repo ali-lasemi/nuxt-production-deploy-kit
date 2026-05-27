@@ -1,0 +1,35 @@
+name: Validate Repository
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    name: Validate scripts and configs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check shell scripts syntax
+        run: |
+          bash -n scripts/*.sh
+
+      - name: Validate required files
+        run: |
+          test -f README.md
+          test -f ROADMAP.md
+          test -f CHANGELOG.md
+          test -f docs/deployment.md
+          test -f examples/nginx/nuxt.conf
+          test -f examples/apache/nuxt-vhost.conf
+          test -f examples/systemd/nuxt-app.service
+
+      - name: Check executable scripts
+        run: |
+          test -x scripts/deploy.sh
+          test -x scripts/rollback.sh
+          test -x scripts/healthcheck.sh
+          test -x scripts/rotate-logs.sh
