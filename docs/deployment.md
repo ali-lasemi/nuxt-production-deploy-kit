@@ -33,6 +33,24 @@ EXPECTED_STATUS=200 ./scripts/healthcheck.sh http://127.0.0.1:3000
 
 ---
 
+## Environment Configuration
+
+Example production environment file:
+
+```bash
+cp examples/env/.env.production.example .env.production
+```
+
+Common variables:
+
+```env
+NODE_ENV=production
+PORT=3000
+APP_URL=https://example.com
+LOG_DIR=/var/log/nuxt-app
+RELEASE_DIR=/opt/nuxt-app
+```
+
 ## Production Notes
 
 - Always validate the application after deployment
