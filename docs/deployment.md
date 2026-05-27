@@ -50,6 +50,7 @@ APP_URL=https://example.com
 LOG_DIR=/var/log/nuxt-app
 RELEASE_DIR=/opt/nuxt-app
 ```
+---
 
 ## Production Notes
 
@@ -58,3 +59,25 @@ RELEASE_DIR=/opt/nuxt-app
 - Use dedicated service users
 - Avoid deploying directly into the active runtime directory
 - Monitor logs after restart
+
+---
+
+# Docker Deployment
+
+## Build Image
+
+```bash
+docker build -t nuxt-app -f examples/docker/Dockerfile .
+```
+
+## Run Container
+
+```bash
+docker run -d -p 3000:3000 --name nuxt-app nuxt-app
+```
+
+## Docker Compose
+
+```bash
+docker compose -f examples/docker/docker-compose.yml up -d
+```
