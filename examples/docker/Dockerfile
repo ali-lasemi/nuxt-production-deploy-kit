@@ -1,12 +1,21 @@
-FROM node:20-alpine
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-COPY .output .output
-COPY package.json package.json
+COPY package*.json ./
 
-ENV NODE_ENV=production
-ENV PORT=3000
+RUN npm ci
+
+COPY . .
+
+RUN npm run build
+
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY --from=builder /app/.output ./.output
+COPY --from=builder /app/package*.json ./
 
 EXPOSE 3000
 
