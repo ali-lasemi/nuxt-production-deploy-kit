@@ -10,17 +10,20 @@
 - [x] Healthcheck script
 - [x] Deployment and rollback scripts
 - [x] CI validation workflow
+- [x] Blue-green deployment strategy
+- [x] Zero-downtime deployment workflow
+- [x] Improved rollback strategy
+- [x] Docker production deployment example
+- [x] Deployment runbook
 
 ---
 
 ## Phase 2 — Advanced Deployment Patterns
 
-- [ ] Docker deployment example
-- [ ] Zero-downtime deployment workflow
-- [ ] Blue/green deployment strategy
-- [x] Release retention cleanup script
+- [ ] Release retention cleanup script
 - [ ] Environment file examples
 - [ ] Production security hardening guide
+- [ ] Advanced healthcheck strategy
 
 ---
 
@@ -29,6 +32,5 @@
 - [ ] Kubernetes deployment manifests
 - [ ] Helm chart
 - [ ] Observability stack integration
-- [ ] Alerting examples
 - [ ] Infrastructure automation with Ansible
 - [ ] GitOps deployment example
