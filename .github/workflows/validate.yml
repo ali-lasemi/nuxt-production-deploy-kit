@@ -45,6 +45,7 @@ jobs:
           command -v nginx
           command -v apache2ctl
           command -v systemd-analyze
+          command -v docker
 
       - name: Validate required files
         run: |
@@ -57,13 +58,19 @@ jobs:
           test -f docs/release-metadata.md
           test -f docs/rollback.md
           test -f docs/ci-configuration-validation.md
+          test -f docs/docker-deployment.md
           test -f examples/nginx/nuxt.conf
           test -f examples/apache/nuxt-vhost.conf
           test -f examples/systemd/nuxt-app.service
           test -f examples/env/.env.production.example
+          test -f examples/docker/Dockerfile
+          test -f examples/docker/docker-compose.yml
           test -f scripts/validate-deployment.sh
           test -f scripts/release-metadata.mjs
           test -f tests/integration/deploy-rollback.sh
+          test -f tests/fixtures/docker-app/package.json
+          test -f tests/fixtures/docker-app/package-lock.json
+          test -f tests/fixtures/docker-app/build.mjs
 
       - name: Validate executable scripts
         run: |
@@ -96,6 +103,39 @@ jobs:
       - name: Validate systemd service unit
         run: |
           systemd-analyze verify examples/systemd/nuxt-app.service
+
+      - name: Validate Docker Compose configuration
+        working-directory: examples/docker
+        run: docker compose config
+
+      - name: Build Docker production image
+        run: |
+          docker build \
+            --file examples/docker/Dockerfile \
+            --tag nuxt-production-deploy-kit:test \
+            tests/fixtures/docker-app
+
+      - name: Validate Docker runtime user
+        run: |
+          test "$(docker image inspect nuxt-production-deploy-kit:test --format '{{.Config.User}}')" = "node"
+
+      - name: Run Docker image health smoke test
+        run: |
+          container_id="$(docker run -d -p 127.0.0.1::3000 nuxt-production-deploy-kit:test)"
+          trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' EXIT
+
+          host_port="$(docker port "$container_id" 3000/tcp | sed 's/.*://')"
+
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent "http://127.0.0.1:${host_port}/" >/dev/null; then
+              exit 0
+            fi
+
+            sleep 1
+          done
+
+          docker logs "$container_id"
+          exit 1
 
       - name: Run deployment and rollback integration tests
         run: tests/integration/deploy-rollback.sh
