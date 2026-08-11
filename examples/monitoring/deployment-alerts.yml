@@ -1,0 +1,46 @@
+groups:
+  - name: nuxt-deployment
+    rules:
+      - alert: NuxtDeploymentFailure
+        expr: increase(nuxt_deployment_events_total{result=~"failure|failed|critical_failure"}[15m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          service: nuxt-app
+        annotations:
+          summary: Nuxt deployment operation failed
+          description: A deployment-related operation reported a failure during the last 15 minutes.
+          runbook: docs/incident-response.md
+
+      - alert: NuxtAutomaticRollbackTriggered
+        expr: increase(nuxt_deployment_events_total{operation=~"automatic_rollback|blue_green_traffic_rollback",result="success"}[15m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          service: nuxt-app
+        annotations:
+          summary: Nuxt automatic rollback was triggered
+          description: Deployment automation restored a previous release or traffic slot.
+          runbook: docs/incident-response.md
+
+      - alert: NuxtDeploymentMetricsMissing
+        expr: absent(nuxt_deployment_audit_events)
+        for: 10m
+        labels:
+          severity: warning
+          service: nuxt-app
+        annotations:
+          summary: Nuxt deployment metrics are missing
+          description: Prometheus has not observed the deployment audit metric for at least 10 minutes.
+          runbook: docs/incident-response.md
+
+      - alert: NuxtDeploymentFailureNewerThanSuccess
+        expr: nuxt_deployment_last_failure_timestamp_seconds > on(operation) nuxt_deployment_last_success_timestamp_seconds
+        for: 5m
+        labels:
+          severity: warning
+          service: nuxt-app
+        annotations:
+          summary: Latest deployment operation remains failed
+          description: The most recent failure timestamp for an operation is newer than its most recent success timestamp.
+          runbook: docs/incident-response.md

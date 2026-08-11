@@ -50,6 +50,6 @@
 
 - [x] Structured deployment event logging
 - [x] Deployment metrics examples
-- [ ] Alert integration examples
+- [x] Alert integration examples
 - [x] Release audit trail
 - [ ] Incident response improvements

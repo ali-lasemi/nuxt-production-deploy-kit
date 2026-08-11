@@ -19,7 +19,7 @@ jobs:
       - name: Install validation tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y shellcheck nginx apache2 nodejs sudo
+          sudo apt-get install -y shellcheck nginx apache2 nodejs sudo prometheus prometheus-alertmanager
 
       - name: Validate shell syntax
         run: |
@@ -46,6 +46,8 @@ jobs:
           command -v apache2ctl
           command -v systemd-analyze
           command -v docker
+          command -v promtool
+          command -v amtool
 
       - name: Validate required files
         run: |
@@ -64,6 +66,7 @@ jobs:
           test -f docs/secret-management.md
           test -f docs/deployment-audit.md
           test -f docs/deployment-metrics.md
+          test -f docs/deployment-alerting.md
           test -f examples/nginx/nuxt.conf
           test -f examples/apache/nuxt-vhost.conf
           test -f examples/systemd/nuxt-app.service
@@ -76,6 +79,8 @@ jobs:
           test -f examples/blue-green/nuxt-active-upstream.conf
           test -f examples/blue-green/blue.env
           test -f examples/blue-green/green.env
+          test -f examples/monitoring/deployment-alerts.yml
+          test -f examples/monitoring/alertmanager.yml
           test -f scripts/validate-deployment.sh
           test -f scripts/release-metadata.mjs
           test -f scripts/deployment-event.mjs
@@ -88,6 +93,7 @@ jobs:
           test -f tests/config/systemd-hardening.sh
           test -f tests/config/deployment-permissions.sh
           test -f tests/config/secret-management.sh
+          test -f tests/config/deployment-alerts.sh
           test -f tests/fixtures/docker-app/package.json
           test -f tests/fixtures/docker-app/package-lock.json
           test -f tests/fixtures/docker-app/build.mjs
@@ -113,6 +119,7 @@ jobs:
           test -x tests/config/systemd-hardening.sh
           test -x tests/config/deployment-permissions.sh
           test -x tests/config/secret-management.sh
+          test -x tests/config/deployment-alerts.sh
 
       - name: Validate release metadata tool
         run: node --check scripts/release-metadata.mjs
@@ -161,6 +168,15 @@ jobs:
 
       - name: Validate secret management policy
         run: tests/config/secret-management.sh
+
+      - name: Validate deployment alert policy
+        run: tests/config/deployment-alerts.sh
+
+      - name: Validate Prometheus deployment alerts
+        run: promtool check rules examples/monitoring/deployment-alerts.yml
+
+      - name: Validate Alertmanager configuration
+        run: amtool check-config examples/monitoring/alertmanager.yml
 
       - name: Validate Docker Compose configuration
         working-directory: examples/docker
