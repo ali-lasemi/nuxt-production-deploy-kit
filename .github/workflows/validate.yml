@@ -67,6 +67,7 @@ jobs:
           test -f docs/deployment-audit.md
           test -f docs/deployment-metrics.md
           test -f docs/deployment-alerting.md
+          test -f docs/incident-response.md
           test -f examples/nginx/nuxt.conf
           test -f examples/apache/nuxt-vhost.conf
           test -f examples/systemd/nuxt-app.service
@@ -94,6 +95,7 @@ jobs:
           test -f tests/config/deployment-permissions.sh
           test -f tests/config/secret-management.sh
           test -f tests/config/deployment-alerts.sh
+          test -f tests/config/incident-response.sh
           test -f tests/fixtures/docker-app/package.json
           test -f tests/fixtures/docker-app/package-lock.json
           test -f tests/fixtures/docker-app/build.mjs
@@ -112,6 +114,7 @@ jobs:
           test -x scripts/validate-secret-file.sh
           test -x scripts/audit-releases.sh
           test -x scripts/export-deployment-metrics.sh
+          test -x scripts/collect-incident-diagnostics.sh
           test -x tests/integration/deploy-rollback.sh
           test -x tests/integration/blue-green.sh
           test -x tests/integration/deployment-audit.sh
@@ -120,6 +123,7 @@ jobs:
           test -x tests/config/deployment-permissions.sh
           test -x tests/config/secret-management.sh
           test -x tests/config/deployment-alerts.sh
+          test -x tests/config/incident-response.sh
 
       - name: Validate release metadata tool
         run: node --check scripts/release-metadata.mjs
@@ -171,6 +175,9 @@ jobs:
 
       - name: Validate deployment alert policy
         run: tests/config/deployment-alerts.sh
+
+      - name: Validate incident response policy
+        run: tests/config/incident-response.sh
 
       - name: Validate Prometheus deployment alerts
         run: promtool check rules examples/monitoring/deployment-alerts.yml
