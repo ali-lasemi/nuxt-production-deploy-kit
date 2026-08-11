@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 set -Eeuo pipefail
 
 APP_DIR="${APP_DIR:-/opt/nuxt-app}"
@@ -13,15 +13,31 @@ if [[ ! -d "$RELEASES_DIR" ]]; then
 fi
 
 CURRENT_RELEASE="$(readlink -f "$CURRENT_LINK" || true)"
+PREVIOUS_RELEASE=""
 
-PREVIOUS_RELEASE="$(ls -dt "$RELEASES_DIR"/* 2>/dev/null | grep -v "$CURRENT_RELEASE" | head -n 1 || true)"
+mapfile -t releases < <(
+  find "$RELEASES_DIR" \
+    -mindepth 1 \
+    -maxdepth 1 \
+    -type d \
+    -printf '%T@ %p\n' |
+    sort -rn |
+    cut -d' ' -f2-
+)
+
+for release in "${releases[@]}"; do
+  if [[ "$release" != "$CURRENT_RELEASE" ]]; then
+    PREVIOUS_RELEASE="$release"
+    break
+  fi
+done
 
 if [[ -z "$PREVIOUS_RELEASE" ]]; then
   echo "No previous release found."
   exit 1
 fi
 
-echo "Current release: $CURRENT_RELEASE"
+echo "Current release: ${CURRENT_RELEASE:-unknown}"
 echo "Rolling back to: $PREVIOUS_RELEASE"
 
 ln -sfn "$PREVIOUS_RELEASE" "$CURRENT_LINK"
@@ -29,6 +45,6 @@ ln -sfn "$PREVIOUS_RELEASE" "$CURRENT_LINK"
 sudo systemctl restart "$SERVICE_NAME"
 
 echo "Running rollback healthcheck..."
-curl -f "$HEALTHCHECK_URL"
+"$APP_DIR/current/../scripts/healthcheck.sh" "$HEALTHCHECK_URL" 2>/dev/null || curl -f "$HEALTHCHECK_URL"
 
 echo "Rollback completed successfully."
