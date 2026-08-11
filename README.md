@@ -1,197 +1,224 @@
 # Nuxt Production Deploy Kit
 
-Production-grade deployment workflows for Nuxt applications using CI/CD, reverse proxy, systemd, monitoring and rollback strategies.
+Production-oriented deployment tooling and operational patterns for Nuxt applications using release directories, systemd, reverse proxies, health validation, rollback, Docker examples, and CI validation.
 
----
+## Overview
 
-# Overview
+This repository demonstrates practical deployment engineering for Nuxt applications with emphasis on:
 
-This repository contains a collection of production-oriented deployment patterns and infrastructure examples for running Nuxt applications reliably in real-world environments.
+- reliability
+- repeatable releases
+- post-deployment validation
+- rollback readiness
+- operational clarity
+- maintainable infrastructure examples
 
-The goal is to provide practical deployment workflows focused on:
+The primary deployment model is a release-based systemd workflow.
 
-- Reliability
-- Automation
-- Observability
-- Maintainability
-- Production readiness
+## Current Capabilities
 
----
-
-# Features
-
-- Nuxt 3 production deployment workflows
+- Nuxt production artifact deployment
+- timestamped release directories
+- `current` symlink switching
 - systemd service management
-- Nginx & Apache reverse proxy examples
-- CI/CD pipeline templates
-- Healthcheck & rollback scripts
-- Log rotation examples
-- Production troubleshooting documentation
-- Infrastructure-oriented deployment patterns
+- retry-aware HTTP healthchecks
+- post-deployment service validation
+- local validation through `127.0.0.1`
+- optional public endpoint validation
+- rollback tooling
+- release retention cleanup
+- Nginx reverse proxy example
+- Apache reverse proxy example
+- Docker deployment example
+- log rotation tooling
+- deployment runbook
+- troubleshooting documentation
+- GitHub Actions validation
+- ShellCheck validation
 
----
+## Repository Structure
 
-# Repository Structure
-
-```txt
-docs/                  Documentation and architecture guides
-examples/              Example configs and deployment templates
-scripts/               Deployment and operational scripts
-.github/workflows/     CI validation workflows
+```text
+.github/workflows/     Repository validation
+docs/                  Architecture and operational documentation
+examples/              Runtime and reverse-proxy examples
+scripts/               Deployment and operational tooling
 ```
 
----
+## Architecture
 
-# Architecture
-
-```txt
-                ┌──────────────────┐
-                │   Git Provider   │
-                └────────┬─────────┘
-                         │
-                         ▼
-                ┌──────────────────┐
-                │      CI/CD       │
-                │ GitHub/GitLab CI │
-                └────────┬─────────┘
-                         │
-                         ▼
-                ┌──────────────────┐
-                │ Build Artifacts  │
-                └────────┬─────────┘
-                         │
-                         ▼
-                ┌──────────────────┐
-                │  Nuxt Runtime    │
-                │   Node.js App    │
-                └────────┬─────────┘
-                         │
-            ┌────────────┴────────────┐
-            ▼                         ▼
-   ┌────────────────┐       ┌────────────────┐
-   │ Reverse Proxy  │       │  Monitoring    │
-   │ Nginx / Apache │       │ Healthchecks   │
-   └────────────────┘       └────────────────┘
+```text
+Git Repository
+     |
+     v
+CI Validation
+     |
+     v
+Build Artifact
+     |
+     v
+Timestamped Release
+     |
+     v
+current Symlink
+     |
+     v
+systemd
+     |
+     v
+Nuxt Runtime
+     |
+     v
+Reverse Proxy
+     |
+     v
+Users
 ```
 
----
+See `docs/architecture.md`.
 
-# Deployment Workflow
+## Deployment
 
-## Typical Deployment Flow
+Standard release flow:
 
-1. Build Nuxt application
-2. Generate production artifacts
-3. Transfer deployment package
-4. Restart application service
-5. Run healthcheck validation
-6. Rollback if deployment fails
+```text
+Build artifact
+   |
+   v
+Create release directory
+   |
+   v
+Extract artifact
+   |
+   v
+Switch current symlink
+   |
+   v
+Restart application service
+   |
+   v
+Validate systemd state
+   |
+   v
+Validate local endpoint
+   |
+   v
+Optionally validate public endpoint
+```
 
----
+Example:
 
-# Included Components
+```bash
+./scripts/deploy.sh build.zip
+```
 
-## systemd
+Configuration:
 
-Production-style service management examples.
+```bash
+APP_NAME=nuxt-app APP_PORT=3000 HEALTH_PATH=/ ./scripts/deploy.sh build.zip
+```
 
-- Restart policies
-- Environment variables
-- User services
-- Logging integration
+Optional public validation:
 
----
+```bash
+PUBLIC_URL=https://example.com ./scripts/deploy.sh build.zip
+```
+
+See `docs/deployment.md`.
+
+## Validation
+
+Deployment validation checks:
+
+1. configured systemd service is active
+2. application responds through `127.0.0.1`
+3. optional public endpoint responds successfully
+
+Healthchecks support retries, timeout configuration, and expected HTTP status configuration.
+
+## Rollback
+
+Rollback tooling preserves the release-based deployment model and switches the active symlink back to a previous release.
+
+See:
+
+```text
+docs/rollback.md
+scripts/rollback.sh
+```
 
 ## Reverse Proxy
 
-Example configurations for:
+Examples are available for:
 
 - Nginx
 - Apache
 
-Features include:
+## Docker
 
-- SSL support
-- Proxy headers
-- WebSocket handling
-- Compression
-- Caching patterns
+A Docker deployment example is included as an alternative deployment pattern.
 
----
+Docker is separate from the primary systemd release workflow.
 
-## CI/CD
+## Blue/Green Status
 
-Templates for:
+The repository contains:
 
-- GitHub Actions
-- GitLab CI/CD
+- a blue/green strategy document
+- an Nginx blue/green configuration example
 
-Deployment examples include:
+End-to-end automated blue/green traffic switching is still a roadmap item.
 
-- SSH deployment
-- Artifact handling
-- Rollback strategies
-- Cache optimization
+## Zero-Downtime Status
 
----
+A single systemd service restart is not considered sufficient evidence of guaranteed zero downtime.
 
-# Operational Scripts
+True zero-downtime deployment remains a roadmap item and requires parallel runtime targets plus controlled reverse-proxy traffic switching.
 
-## deploy.sh
-Deployment automation helper.
+## CI
 
-## rollback.sh
-Rollback helper for failed deployments.
+GitHub Actions currently validates:
 
-## healthcheck.sh
-Application health validation script.
+- Bash syntax
+- ShellCheck
+- required repository files
+- executable script permissions
 
-## rotate-logs.sh
-Simple operational log rotation helper.
+Additional integration tests and configuration validation are planned.
 
----
+## Operations
 
-# Documentation
+Operational documentation includes:
 
-Detailed documentation is available inside:
+- architecture
+- deployment
+- rollback
+- troubleshooting
+- systemd
+- Nginx
+- Apache
+- log rotation
+- Docker deployment
+- deployment runbook
 
-```txt
-docs/
-```
+## Roadmap
 
-Including:
+Next production-grade improvements focus on:
 
-- Architecture
-- Deployment
-- Reverse proxy configuration
-- systemd setup
-- Troubleshooting
-- Log rotation
+- automatic rollback safety
+- release metadata
+- deployment locking
+- integration tests
+- configuration validation
+- security hardening
+- true blue/green traffic switching
+- observability
+- release auditability
 
----
+## Philosophy
 
-# Roadmap
+Production tooling should be simple, observable, recoverable, testable, and honest about its guarantees.
 
-- Docker deployment examples
-- Kubernetes deployment templates
-- Blue/green deployment strategy
-- Zero-downtime deployment workflows
-- Observability stack integration
-- Infrastructure automation examples
+## License
 
----
-
-# Philosophy
-
-```txt
-Production systems should be reliable,
-observable,
-automated
-and easy to maintain.
-```
-
----
-
-# License
-
-MIT License
+MIT

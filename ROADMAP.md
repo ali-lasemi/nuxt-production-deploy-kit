@@ -1,36 +1,55 @@
 # Roadmap
 
-## Phase 1 — Production Deployment Basics
+## Phase 1 — Production Deployment Foundation
 
 - [x] Repository structure
 - [x] systemd service example
 - [x] Nginx reverse proxy example
 - [x] Apache reverse proxy example
 - [x] Log rotation documentation
-- [x] Healthcheck script
-- [x] Deployment and rollback scripts
-- [x] CI validation workflow
-- [x] Blue-green deployment strategy
-- [x] Zero-downtime deployment workflow
-- [x] Improved rollback strategy
-- [x] Docker production deployment example
+- [x] Retry-aware healthcheck
+- [x] Deployment script
+- [x] Rollback script
+- [x] Release retention cleanup
+- [x] Environment configuration example
+- [x] Post-deployment validation framework
 - [x] Deployment runbook
+- [x] Architecture documentation
+- [x] ShellCheck CI validation
 
----
+## Phase 2 — Production Reliability
 
-## Phase 2 — Advanced Deployment Patterns
+- [ ] Automatic rollback on failed deployment validation
+- [ ] Release metadata and verified release state
+- [ ] Deployment concurrency locking
+- [ ] Rollback concurrency locking
+- [ ] Deployment and rollback integration tests
+- [ ] Nginx configuration validation in CI
+- [ ] Apache configuration in CI
+- [ ] systemd unit validation in CI
+- [ ] Docker build validation in CI
 
-- [ ] Release retention cleanup script
-- [ ] Environment file examples
-- [ ] Production security hardening guide
-- [ ] Advanced healthcheck strategy
+## Phase 3 — Runtime Hardening
 
----
+- [ ] Production Docker hardening
+- [ ] systemd security hardening
+- [ ] Deployment user and sudo policy documentation
+- [ ] Secret-management guidance
+- [ ] Filesystem and release permission hardening
 
-## Phase 3 — Platform Engineering Extensions
+## Phase 4 — Advanced Deployment Strategies
 
-- [ ] Kubernetes deployment manifests
-- [ ] Helm chart
-- [ ] Observability stack integration
-- [ ] Infrastructure automation with Ansible
-- [ ] GitOps deployment example
+- [ ] Automated blue/green environment selection
+- [ ] Inactive environment deployment
+- [ ] Pre-switch readiness validation
+- [ ] Atomic reverse-proxy traffic switch
+- [ ] Traffic-switch rollback
+- [ ] Verified zero-downtime deployment workflow
+
+## Phase 5 — Operational Maturity
+
+- [ ] Structured deployment event logging
+- [ ] Deployment metrics examples
+- [ ] Alert integration examples
+- [ ] Release audit trail
+- [ ] Incident response improvements
