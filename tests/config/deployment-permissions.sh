@@ -14,7 +14,7 @@ require_text() {
   local file="$1"
   local expected="$2"
 
-  if ! grep -Fq "$expected" "$file"; then
+  if ! grep -Fq -- "$expected" "$file"; then
     fail "Missing expected policy in $file: $expected"
   fi
 }
