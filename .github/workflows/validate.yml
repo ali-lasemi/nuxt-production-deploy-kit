@@ -63,6 +63,7 @@ jobs:
           test -f docs/deployment-user-security.md
           test -f docs/secret-management.md
           test -f docs/deployment-audit.md
+          test -f docs/deployment-metrics.md
           test -f examples/nginx/nuxt.conf
           test -f examples/apache/nuxt-vhost.conf
           test -f examples/systemd/nuxt-app.service
@@ -78,10 +79,12 @@ jobs:
           test -f scripts/validate-deployment.sh
           test -f scripts/release-metadata.mjs
           test -f scripts/deployment-event.mjs
+          test -f scripts/deployment-metrics.mjs
           test -f scripts/deployment-events.sh
           test -f tests/integration/deploy-rollback.sh
           test -f tests/integration/blue-green.sh
           test -f tests/integration/deployment-audit.sh
+          test -f tests/integration/deployment-metrics.sh
           test -f tests/config/systemd-hardening.sh
           test -f tests/config/deployment-permissions.sh
           test -f tests/config/secret-management.sh
@@ -102,9 +105,11 @@ jobs:
           test -x scripts/bootstrap-host.sh
           test -x scripts/validate-secret-file.sh
           test -x scripts/audit-releases.sh
+          test -x scripts/export-deployment-metrics.sh
           test -x tests/integration/deploy-rollback.sh
           test -x tests/integration/blue-green.sh
           test -x tests/integration/deployment-audit.sh
+          test -x tests/integration/deployment-metrics.sh
           test -x tests/config/systemd-hardening.sh
           test -x tests/config/deployment-permissions.sh
           test -x tests/config/secret-management.sh
@@ -114,6 +119,9 @@ jobs:
 
       - name: Validate deployment event tool
         run: node --check scripts/deployment-event.mjs
+
+      - name: Validate deployment metrics tool
+        run: node --check scripts/deployment-metrics.mjs
 
       - name: Validate Nginx configuration
         run: |
@@ -186,6 +194,9 @@ jobs:
 
           docker logs "$container_id"
           exit 1
+
+      - name: Run deployment metrics integration tests
+        run: tests/integration/deployment-metrics.sh
 
       - name: Run deployment audit integration tests
         run: tests/integration/deployment-audit.sh
