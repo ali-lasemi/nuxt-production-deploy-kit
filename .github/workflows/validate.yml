@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     name: Validate scripts and configs
@@ -13,9 +16,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check shell scripts syntax
-        run: |
-          bash -n scripts/*.sh
+      - name: Validate shell syntax
+        run: bash -n scripts/*.sh
+
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck
+        run: shellcheck scripts/*.sh
 
       - name: Validate required files
         run: |
@@ -26,10 +34,14 @@ jobs:
           test -f examples/nginx/nuxt.conf
           test -f examples/apache/nuxt-vhost.conf
           test -f examples/systemd/nuxt-app.service
+          test -f examples/env/.env.production.example
+          test -f scripts/validate-deployment.sh
 
-      - name: Check executable scripts
+      - name: Validate executable scripts
         run: |
           test -x scripts/deploy.sh
           test -x scripts/rollback.sh
           test -x scripts/healthcheck.sh
+          test -x scripts/validate-deployment.sh
           test -x scripts/rotate-logs.sh
+          test -x scripts/cleanup-releases.sh

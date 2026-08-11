@@ -1,92 +1,94 @@
 # Deployment Workflow
 
-This document describes a production-oriented deployment workflow for Nuxt applications.
+This repository uses release-based deployments for Nuxt applications.
 
----
+## Deployment Flow
 
-## Deployment Steps
+1. Build the Nuxt application.
+2. Package the production artifact.
+3. Transfer the build archive to the server.
+4. Extract the archive into a timestamped release directory.
+5. Update the `current` symlink.
+6. Restart the systemd application service.
+7. Validate the systemd service state.
+8. Validate the application through `127.0.0.1`.
+9. Optionally validate the public endpoint.
 
-1. Build the Nuxt application
-2. Package the `.output` directory
-3. Upload the artifact to the server
-4. Extract the artifact into the release directory
-5. Update the current symlink
-6. Restart the systemd service
-7. Run a healthcheck
-8. Roll back if the healthcheck fails
+## Release Layout
 
----
+```text
+/opt/nuxt-app/
+├── current -> /opt/nuxt-app/releases/<release>
+└── releases/
+    ├── 20260811090000/
+    ├── 20260811100000/
+    └── 20260811110000/
+```
 
-## Healthcheck
-
-Example:
+## Deployment
 
 ```bash
-./scripts/healthcheck.sh http://127.0.0.1:3000
+./scripts/deploy.sh build.zip
 ```
 
-You can customize the expected status:
+## Configuration
 
 ```bash
-EXPECTED_STATUS=200 ./scripts/healthcheck.sh http://127.0.0.1:3000
+APP_NAME=nuxt-app \
+APP_PORT=3000 \
+HEALTH_PATH=/ \
+./scripts/deploy.sh build.zip
 ```
 
----
-
-## Environment Configuration
-
-Example production environment file:
+## Optional Public Validation
 
 ```bash
-cp examples/env/.env.production.example .env.production
+APP_NAME=nuxt-app \
+APP_PORT=3000 \
+HEALTH_PATH=/ \
+PUBLIC_URL=https://example.com \
+./scripts/deploy.sh build.zip
 ```
 
-Common variables:
+## Validation Variables
 
-```env
-NODE_ENV=production
-PORT=3000
-APP_URL=https://example.com
-LOG_DIR=/var/log/nuxt-app
-RELEASE_DIR=/opt/nuxt-app
+```text
+APP_NAME
+APP_PORT
+HEALTH_PATH
+PUBLIC_URL
+EXPECTED_STATUS
+TIMEOUT_SECONDS
+HEALTH_RETRIES
+HEALTH_RETRY_DELAY
 ```
----
 
-## Production Notes
+## Defaults
 
-- Always validate the application after deployment
-- Keep previous releases for rollback
-- Use dedicated service users
-- Avoid deploying directly into the active runtime directory
-- Monitor logs after restart
+```text
+APP_NAME=nuxt-app
+APP_PORT=3000
+HEALTH_PATH=/
+EXPECTED_STATUS=200
+TIMEOUT_SECONDS=10
+HEALTH_RETRIES=5
+HEALTH_RETRY_DELAY=2
+```
 
----
-
-# Docker Deployment
-
-## Build Image
+## Manual Validation
 
 ```bash
-docker build -t nuxt-app -f examples/docker/Dockerfile .
+APP_NAME=nuxt-app \
+APP_PORT=3000 \
+HEALTH_PATH=/ \
+./scripts/validate-deployment.sh
 ```
 
-## Run Container
+## Production Rules
 
-```bash
-docker run -d -p 3000:3000 --name nuxt-app nuxt-app
-```
-
-## Docker Compose
-
-```bash
-docker compose -f examples/docker/docker-compose.yml up -d
-```
----
-
-# Release Cleanup
-
-Keep only the latest releases to prevent disk usage growth.
-
-```bash
-KEEP_RELEASES=5 ./scripts/cleanup-releases.sh
-```
+- Keep previous releases available for rollback.
+- Use a dedicated deployment user.
+- Do not deploy directly into the active runtime directory.
+- Validate the local application before validating the public path.
+- Treat validation failure as deployment failure.
+- Automatic rollback is handled separately.
