@@ -16,6 +16,7 @@ FIXTURES_DIR="$TEST_ROOT/fixtures"
 SYSTEMCTL_LOG="$TEST_ROOT/systemctl.log"
 FAIL_HEALTH_ONCE_FLAG="$TEST_ROOT/fail-health-once"
 LOCK_FILE="$APP_DIR/.deployment.lock"
+AUDIT_LOG="$TEST_ROOT/deployments.jsonl"
 
 mkdir -p "$APP_DIR/releases" "$FAKE_BIN" "$FIXTURES_DIR"
 
@@ -32,6 +33,7 @@ export DEPLOY_LOCK_FILE="$LOCK_FILE"
 export DEPLOY_LOCK_TIMEOUT="1"
 export SYSTEMCTL_LOG
 export FAIL_HEALTH_ONCE_FLAG
+export AUDIT_LOG
 
 fail() {
   echo "TEST FAILED: $1"
