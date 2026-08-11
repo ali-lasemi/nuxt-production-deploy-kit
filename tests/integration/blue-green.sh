@@ -24,6 +24,11 @@ mkdir -p "$APP_DIR/green/releases"
 mkdir -p "$BIN_DIR"
 mkdir -p "$BUILD_DIR/.output/server"
 
+INITIAL_BLUE_RELEASE="$APP_DIR/blue/releases/initial"
+mkdir -p "$INITIAL_BLUE_RELEASE/.output/server"
+printf 'initial-blue\n' >"$INITIAL_BLUE_RELEASE/.output/server/index.mjs"
+ln -sfn "$INITIAL_BLUE_RELEASE" "$APP_DIR/blue/current"
+
 printf 'fixture\n' >"$BUILD_DIR/.output/server/index.mjs"
 
 (
