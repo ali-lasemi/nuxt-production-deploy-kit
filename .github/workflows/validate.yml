@@ -114,7 +114,6 @@ jobs:
 
       - name: Validate deployment event tool
         run: node --check scripts/deployment-event.mjs
-        run: node --check scripts/release-metadata.mjs
 
       - name: Validate Nginx configuration
         run: |
