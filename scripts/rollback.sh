@@ -15,12 +15,29 @@ CURRENT_LINK="$APP_DIR/current"
 DEPLOY_LOCK_FILE="${DEPLOY_LOCK_FILE:-$APP_DIR/.deployment.lock}"
 DEPLOY_LOCK_TIMEOUT="${DEPLOY_LOCK_TIMEOUT:-30}"
 
+CURRENT_RELEASE=""
+ROLLBACK_TARGET=""
+
 validate_runtime() {
   APP_NAME="$APP_NAME" \
   APP_PORT="$APP_PORT" \
   HEALTH_PATH="$HEALTH_PATH" \
   PUBLIC_URL="$PUBLIC_URL" \
   "$SCRIPT_DIR/validate-deployment.sh"
+}
+
+metadata_update() {
+  local release_path="$1"
+  shift
+
+  local metadata_file="$release_path/release-metadata.json"
+
+  if [[ ! -f "$metadata_file" ]]; then
+    echo "WARN: Release metadata not found: $metadata_file"
+    return 0
+  fi
+
+  node "$SCRIPT_DIR/release-metadata.mjs" update "$metadata_file" "$@"
 }
 
 acquire_deployment_lock() {
@@ -59,6 +76,8 @@ restore_original_release() {
     return 1
   fi
 
+  metadata_update "$CURRENT_RELEASE" "status=active" "validation=passed"
+
   echo "Original release restored successfully."
 
   return 0
@@ -69,10 +88,12 @@ if [[ ! "$DEPLOY_LOCK_TIMEOUT" =~ ^[0-9]+$ ]]; then
   exit 2
 fi
 
-if ! command -v flock >/dev/null 2>&1; then
-  echo "ERROR: flock is required but was not found."
-  exit 2
-fi
+for required_command in flock node; do
+  if ! command -v "$required_command" >/dev/null 2>&1; then
+    echo "ERROR: Required command not found: $required_command"
+    exit 2
+  fi
+done
 
 if [[ ! -d "$RELEASES_DIR" ]]; then
   echo "ERROR: Releases directory not found: $RELEASES_DIR"
@@ -129,12 +150,16 @@ fi
 echo "Current release: ${CURRENT_RELEASE:-unknown}"
 echo "Rollback target: $ROLLBACK_TARGET"
 
+metadata_update "$ROLLBACK_TARGET" "status=activating" "rollback=pending"
+
 ln -sfn "$ROLLBACK_TARGET" "$CURRENT_LINK"
 
 echo "Restarting systemd service: $APP_NAME"
 
 if ! sudo systemctl restart "$APP_NAME"; then
   echo "ERROR: Service restart failed during rollback."
+
+  metadata_update "$ROLLBACK_TARGET" "status=rollback_failed" "rollback=failed"
 
   if ! restore_original_release; then
     echo "CRITICAL: Rollback failed and original release recovery also failed."
@@ -149,12 +174,24 @@ echo "Validating rollback target..."
 if ! validate_runtime; then
   echo "ERROR: Rollback target failed validation."
 
+  metadata_update "$ROLLBACK_TARGET" "status=rollback_failed" "validation=failed" "rollback=failed"
+
   if ! restore_original_release; then
     echo "CRITICAL: Rollback validation failed and original release recovery also failed."
     exit 2
   fi
 
   exit 1
+fi
+
+if [[ -n "$CURRENT_RELEASE" && -d "$CURRENT_RELEASE" ]]; then
+  metadata_update "$CURRENT_RELEASE" "status=inactive"
+fi
+
+metadata_update "$ROLLBACK_TARGET" "status=active" "validation=passed" "rollback=activated"
+
+if [[ -f "$ROLLBACK_TARGET/release-metadata.json" ]]; then
+  node "$SCRIPT_DIR/release-metadata.mjs" verify "$ROLLBACK_TARGET/release-metadata.json"
 fi
 
 echo

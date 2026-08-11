@@ -33,6 +33,8 @@ jobs:
           command -v cut
           command -v unzip
           command -v curl
+          command -v sha256sum
+          command -v node
 
       - name: Validate required files
         run: |
@@ -42,12 +44,14 @@ jobs:
           test -f docs/architecture.md
           test -f docs/deployment.md
           test -f docs/deployment-locking.md
+          test -f docs/release-metadata.md
           test -f docs/rollback.md
           test -f examples/nginx/nuxt.conf
           test -f examples/apache/nuxt-vhost.conf
           test -f examples/systemd/nuxt-app.service
           test -f examples/env/.env.production.example
           test -f scripts/validate-deployment.sh
+          test -f scripts/release-metadata.mjs
 
       - name: Validate executable scripts
         run: |
@@ -57,3 +61,5 @@ jobs:
           test -x scripts/validate-deployment.sh
           test -x scripts/rotate-logs.sh
           test -x scripts/cleanup-releases.sh
+      - name: Validate release metadata tool
+        run: node --check scripts/release-metadata.mjs
