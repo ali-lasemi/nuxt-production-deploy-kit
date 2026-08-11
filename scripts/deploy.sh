@@ -12,6 +12,9 @@ PUBLIC_URL="${PUBLIC_URL:-}"
 RELEASES_DIR="$APP_DIR/releases"
 CURRENT_LINK="$APP_DIR/current"
 
+DEPLOY_LOCK_FILE="${DEPLOY_LOCK_FILE:-$APP_DIR/.deployment.lock}"
+DEPLOY_LOCK_TIMEOUT="${DEPLOY_LOCK_TIMEOUT:-30}"
+
 TIMESTAMP="$(date +%Y%m%d%H%M%S)"
 NEW_RELEASE="$RELEASES_DIR/$TIMESTAMP"
 BUILD_ARCHIVE="${1:-build.zip}"
@@ -24,6 +27,22 @@ validate_runtime() {
   HEALTH_PATH="$HEALTH_PATH" \
   PUBLIC_URL="$PUBLIC_URL" \
   "$SCRIPT_DIR/validate-deployment.sh"
+}
+
+acquire_deployment_lock() {
+  mkdir -p "$(dirname "$DEPLOY_LOCK_FILE")"
+
+  exec {DEPLOY_LOCK_FD}>"$DEPLOY_LOCK_FILE"
+
+  echo "Acquiring deployment lock: $DEPLOY_LOCK_FILE"
+
+  if ! flock -w "$DEPLOY_LOCK_TIMEOUT" "$DEPLOY_LOCK_FD"; then
+    echo "ERROR: Could not acquire deployment lock within ${DEPLOY_LOCK_TIMEOUT}s."
+    echo "Another deployment or rollback operation may already be running."
+    exit 3
+  fi
+
+  echo "Deployment lock acquired."
 }
 
 rollback_failed_deployment() {
@@ -56,8 +75,19 @@ rollback_failed_deployment() {
   echo
   echo "Automatic rollback completed successfully."
   echo "Active release: $PREVIOUS_RELEASE"
+
   return 0
 }
+
+if [[ ! "$DEPLOY_LOCK_TIMEOUT" =~ ^[0-9]+$ ]]; then
+  echo "ERROR: DEPLOY_LOCK_TIMEOUT must be a non-negative integer."
+  exit 2
+fi
+
+if ! command -v flock >/dev/null 2>&1; then
+  echo "ERROR: flock is required but was not found."
+  exit 2
+fi
 
 if [[ ! -f "$BUILD_ARCHIVE" ]]; then
   echo "ERROR: Build archive not found: $BUILD_ARCHIVE"
@@ -66,10 +96,13 @@ fi
 
 mkdir -p "$RELEASES_DIR"
 
+acquire_deployment_lock
+
 echo "Creating release directory: $NEW_RELEASE"
 mkdir -p "$NEW_RELEASE"
 
 echo "Extracting build archive..."
+
 if ! unzip -q "$BUILD_ARCHIVE" -d "$NEW_RELEASE"; then
   echo "ERROR: Failed to extract build archive."
   rm -rf -- "$NEW_RELEASE"
@@ -80,6 +113,7 @@ echo "Switching current release..."
 ln -sfn "$NEW_RELEASE" "$CURRENT_LINK"
 
 echo "Restarting systemd service: $APP_NAME"
+
 if ! sudo systemctl restart "$APP_NAME"; then
   echo "ERROR: Service restart failed."
 

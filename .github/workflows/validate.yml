@@ -25,12 +25,24 @@ jobs:
       - name: Run ShellCheck
         run: shellcheck scripts/*.sh
 
+      - name: Validate runtime dependencies
+        run: |
+          command -v flock
+          command -v find
+          command -v sort
+          command -v cut
+          command -v unzip
+          command -v curl
+
       - name: Validate required files
         run: |
           test -f README.md
           test -f ROADMAP.md
           test -f CHANGELOG.md
+          test -f docs/architecture.md
           test -f docs/deployment.md
+          test -f docs/deployment-locking.md
+          test -f docs/rollback.md
           test -f examples/nginx/nuxt.conf
           test -f examples/apache/nuxt-vhost.conf
           test -f examples/systemd/nuxt-app.service
