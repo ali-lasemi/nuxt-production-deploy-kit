@@ -9,20 +9,22 @@ permissions:
 
 jobs:
   validate:
-    name: Validate scripts and configs
+    name: Validate scripts, configs, and deployment behavior
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck nginx apache2
+
       - name: Validate shell syntax
         run: |
           bash -n scripts/*.sh
           bash -n tests/integration/*.sh
-
-      - name: Install ShellCheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
 
       - name: Run ShellCheck
         run: |
@@ -40,6 +42,9 @@ jobs:
           command -v curl
           command -v sha256sum
           command -v node
+          command -v nginx
+          command -v apache2ctl
+          command -v systemd-analyze
 
       - name: Validate required files
         run: |
@@ -51,6 +56,7 @@ jobs:
           test -f docs/deployment-locking.md
           test -f docs/release-metadata.md
           test -f docs/rollback.md
+          test -f docs/ci-configuration-validation.md
           test -f examples/nginx/nuxt.conf
           test -f examples/apache/nuxt-vhost.conf
           test -f examples/systemd/nuxt-app.service
@@ -71,6 +77,25 @@ jobs:
 
       - name: Validate release metadata tool
         run: node --check scripts/release-metadata.mjs
+
+      - name: Validate Nginx configuration
+        run: |
+          sudo cp examples/nginx/nuxt.conf /etc/nginx/conf.d/nuxt-app.conf
+          sudo rm -f /etc/nginx/sites-enabled/default
+          sudo nginx -t
+
+      - name: Validate Apache configuration
+        run: |
+          sudo a2enmod proxy
+          sudo a2enmod proxy_http
+          sudo a2enmod headers
+          sudo cp examples/apache/nuxt-vhost.conf /etc/apache2/sites-available/nuxt-app.conf
+          sudo a2ensite nuxt-app.conf
+          sudo apache2ctl configtest
+
+      - name: Validate systemd service unit
+        run: |
+          systemd-analyze verify examples/systemd/nuxt-app.service
 
       - name: Run deployment and rollback integration tests
         run: tests/integration/deploy-rollback.sh
