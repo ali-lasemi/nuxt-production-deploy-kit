@@ -17,13 +17,17 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Validate shell syntax
-        run: bash -n scripts/*.sh
+        run: |
+          bash -n scripts/*.sh
+          bash -n tests/integration/*.sh
 
       - name: Install ShellCheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
 
       - name: Run ShellCheck
-        run: shellcheck scripts/*.sh
+        run: |
+          shellcheck scripts/*.sh
+          shellcheck tests/integration/*.sh
 
       - name: Validate runtime dependencies
         run: |
@@ -32,6 +36,7 @@ jobs:
           command -v sort
           command -v cut
           command -v unzip
+          command -v zip
           command -v curl
           command -v sha256sum
           command -v node
@@ -52,6 +57,7 @@ jobs:
           test -f examples/env/.env.production.example
           test -f scripts/validate-deployment.sh
           test -f scripts/release-metadata.mjs
+          test -f tests/integration/deploy-rollback.sh
 
       - name: Validate executable scripts
         run: |
@@ -61,5 +67,10 @@ jobs:
           test -x scripts/validate-deployment.sh
           test -x scripts/rotate-logs.sh
           test -x scripts/cleanup-releases.sh
+          test -x tests/integration/deploy-rollback.sh
+
       - name: Validate release metadata tool
         run: node --check scripts/release-metadata.mjs
+
+      - name: Run deployment and rollback integration tests
+        run: tests/integration/deploy-rollback.sh

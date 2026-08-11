@@ -1,6 +1,6 @@
 # Roadmap
 
-## Phase 1 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Production Deployment Foundation
+## Phase 1 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Production Deployment Foundation
 
 - [x] Repository structure
 - [x] systemd service example
@@ -17,19 +17,19 @@
 - [x] Architecture documentation
 - [x] ShellCheck CI validation
 
-## Phase 2 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Production Reliability
+## Phase 2 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Production Reliability
 
 - [x] Automatic rollback on failed deployment validation
 - [x] Release metadata and verified release state
 - [x] Deployment concurrency locking
 - [x] Rollback concurrency locking
-- [ ] Deployment and rollback integration tests
+- [x] Deployment and rollback integration tests
 - [ ] Nginx configuration validation in CI
 - [ ] Apache configuration in CI
 - [ ] systemd unit validation in CI
 - [ ] Docker build validation in CI
 
-## Phase 3 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Runtime Hardening
+## Phase 3 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Runtime Hardening
 
 - [ ] Production Docker hardening
 - [ ] systemd security hardening
@@ -37,7 +37,7 @@
 - [ ] Secret-management guidance
 - [ ] Filesystem and release permission hardening
 
-## Phase 4 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Advanced Deployment Strategies
+## Phase 4 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Advanced Deployment Strategies
 
 - [ ] Automated blue/green environment selection
 - [ ] Inactive environment deployment
@@ -46,7 +46,7 @@
 - [ ] Traffic-switch rollback
 - [ ] Verified zero-downtime deployment workflow
 
-## Phase 5 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Operational Maturity
+## Phase 5 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Operational Maturity
 
 - [ ] Structured deployment event logging
 - [ ] Deployment metrics examples
