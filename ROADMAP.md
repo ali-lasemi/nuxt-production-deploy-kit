@@ -34,7 +34,7 @@
 - [x] Production Docker hardening
 - [x] systemd security hardening
 - [x] Deployment user and sudo policy documentation
-- [ ] Secret-management guidance
+- [x] Secret-management guidance
 - [x] Filesystem and release permission hardening
 
 ## Phase 4 - Advanced Deployment Strategies

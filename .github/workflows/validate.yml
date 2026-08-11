@@ -61,6 +61,7 @@ jobs:
           test -f docs/docker-deployment.md
           test -f docs/systemd-security.md
           test -f docs/deployment-user-security.md
+          test -f docs/secret-management.md
           test -f examples/nginx/nuxt.conf
           test -f examples/apache/nuxt-vhost.conf
           test -f examples/systemd/nuxt-app.service
@@ -73,6 +74,7 @@ jobs:
           test -f tests/integration/deploy-rollback.sh
           test -f tests/config/systemd-hardening.sh
           test -f tests/config/deployment-permissions.sh
+          test -f tests/config/secret-management.sh
           test -f tests/fixtures/docker-app/package.json
           test -f tests/fixtures/docker-app/package-lock.json
           test -f tests/fixtures/docker-app/build.mjs
@@ -86,9 +88,11 @@ jobs:
           test -x scripts/rotate-logs.sh
           test -x scripts/cleanup-releases.sh
           test -x scripts/bootstrap-host.sh
+          test -x scripts/validate-secret-file.sh
           test -x tests/integration/deploy-rollback.sh
           test -x tests/config/systemd-hardening.sh
           test -x tests/config/deployment-permissions.sh
+          test -x tests/config/secret-management.sh
 
       - name: Validate release metadata tool
         run: node --check scripts/release-metadata.mjs
@@ -121,6 +125,9 @@ jobs:
 
       - name: Validate deployment identity and permissions policy
         run: tests/config/deployment-permissions.sh
+
+      - name: Validate secret management policy
+        run: tests/config/secret-management.sh
 
       - name: Validate Docker Compose configuration
         working-directory: examples/docker
