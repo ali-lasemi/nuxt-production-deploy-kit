@@ -1,27 +1,55 @@
 [Unit]
 Description=Nuxt Production Application
-After=network.target
+Documentation=https://github.com/ali-lasemi/nuxt-production-deploy-kit
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
 
 User=deploy
 Group=deploy
+UMask=0027
 
-WorkingDirectory=/opt/nuxt-app
+WorkingDirectory=/opt/nuxt-app/current
 
 Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
 Environment=PORT=3000
+EnvironmentFile=-/etc/nuxt-app/nuxt-app.env
 
 ExecStart=/usr/bin/node .output/server/index.mjs
 
-Restart=always
-RestartSec=5
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+KillSignal=SIGTERM
 
 StandardOutput=append:/var/log/nuxt-app/out.log
 StandardError=append:/var/log/nuxt-app/error.log
 
 LimitNOFILE=65535
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+LockPersonality=yes
+RestrictNamespaces=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+AmbientCapabilities=
+ReadWritePaths=/var/log/nuxt-app
 
 [Install]
 WantedBy=multi-user.target

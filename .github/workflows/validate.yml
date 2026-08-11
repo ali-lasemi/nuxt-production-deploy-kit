@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install validation tools
         run: |
@@ -59,6 +59,7 @@ jobs:
           test -f docs/rollback.md
           test -f docs/ci-configuration-validation.md
           test -f docs/docker-deployment.md
+          test -f docs/systemd-security.md
           test -f examples/nginx/nuxt.conf
           test -f examples/apache/nuxt-vhost.conf
           test -f examples/systemd/nuxt-app.service
@@ -68,6 +69,7 @@ jobs:
           test -f scripts/validate-deployment.sh
           test -f scripts/release-metadata.mjs
           test -f tests/integration/deploy-rollback.sh
+          test -f tests/config/systemd-hardening.sh
           test -f tests/fixtures/docker-app/package.json
           test -f tests/fixtures/docker-app/package-lock.json
           test -f tests/fixtures/docker-app/build.mjs
@@ -81,6 +83,7 @@ jobs:
           test -x scripts/rotate-logs.sh
           test -x scripts/cleanup-releases.sh
           test -x tests/integration/deploy-rollback.sh
+          test -x tests/config/systemd-hardening.sh
 
       - name: Validate release metadata tool
         run: node --check scripts/release-metadata.mjs
@@ -102,7 +105,11 @@ jobs:
 
       - name: Validate systemd service unit
         run: |
+          sudo mkdir -p /var/log/nuxt-app
           systemd-analyze verify examples/systemd/nuxt-app.service
+
+      - name: Validate systemd hardening policy
+        run: tests/config/systemd-hardening.sh
 
       - name: Validate Docker Compose configuration
         working-directory: examples/docker
