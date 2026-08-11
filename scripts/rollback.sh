@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
-# shellcheck source=deployment-events.sh
+# shellcheck source=/dev/null
 source "$SCRIPT_DIR/deployment-events.sh"
 
 APP_NAME="${APP_NAME:-${SERVICE_NAME:-nuxt-app}}"
@@ -150,7 +150,9 @@ if [[ -z "$ROLLBACK_TARGET" ]]; then
   exit 1
 fi
 
-emit_deployment_event "rollback" "started" "$ROLLBACK_TARGET" "$CURRENT_RELEASE" "" "" "Manual rollback started."`n`necho "Current release: ${CURRENT_RELEASE:-unknown}"
+emit_deployment_event "rollback" "started" "$ROLLBACK_TARGET" "$CURRENT_RELEASE" "" "" "Manual rollback started."
+
+echo "Current release: ${CURRENT_RELEASE:-unknown}"
 echo "Rollback target: $ROLLBACK_TARGET"
 
 metadata_update "$ROLLBACK_TARGET" "status=activating" "rollback=pending"
@@ -198,5 +200,7 @@ if [[ -f "$ROLLBACK_TARGET/release-metadata.json" ]]; then
 fi
 
 echo
-emit_deployment_event "rollback" "success" "$ROLLBACK_TARGET" "$CURRENT_RELEASE" "" "" "Manual rollback completed successfully."`n`necho "Rollback completed successfully."
+emit_deployment_event "rollback" "success" "$ROLLBACK_TARGET" "$CURRENT_RELEASE" "" "" "Manual rollback completed successfully."
+
+echo "Rollback completed successfully."
 echo "Active release: $ROLLBACK_TARGET"
