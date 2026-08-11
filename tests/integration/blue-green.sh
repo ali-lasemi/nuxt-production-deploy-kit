@@ -18,6 +18,7 @@ BUILD_DIR="$TEST_ROOT/build"
 BUILD_ARCHIVE="$TEST_ROOT/build.zip"
 SYSTEMCTL_LOG="$TEST_ROOT/systemctl.log"
 NGINX_LOG="$TEST_ROOT/nginx.log"
+AUDIT_LOG="$TEST_ROOT/deployments.jsonl"
 
 mkdir -p "$APP_DIR/blue/releases"
 mkdir -p "$APP_DIR/green/releases"
@@ -92,6 +93,7 @@ export HEALTH_RETRY_DELAY="0"
 export TIMEOUT_SECONDS="1"
 export SYSTEMCTL_LOG
 export NGINX_LOG
+export AUDIT_LOG
 
 "$ROOT_DIR/scripts/blue-green-deploy.sh" "$BUILD_ARCHIVE"
 
