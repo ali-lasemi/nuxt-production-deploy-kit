@@ -1,223 +1,349 @@
 # Nuxt Production Deploy Kit
 
-Production-oriented deployment tooling and operational patterns for Nuxt applications using release directories, systemd, reverse proxies, health validation, rollback, Docker examples, and CI validation.
+Production-grade deployment and operational tooling for Nuxt applications using release-based deployments, systemd, reverse proxies, validated rollback, blue-green traffic switching, hardened runtime examples, Docker, deployment observability, and CI integration testing.
 
 ## Overview
 
-This repository demonstrates practical deployment engineering for Nuxt applications with emphasis on:
+This repository demonstrates practical production deployment engineering for Nuxt applications with emphasis on:
 
-- reliability
 - repeatable releases
+- deployment safety
 - post-deployment validation
-- rollback readiness
-- operational clarity
-- maintainable infrastructure examples
+- automatic recovery
+- blue-green traffic switching
+- operational visibility
+- least-privilege runtime security
+- reproducible CI validation
+- incident readiness
 
 The primary deployment model is a release-based systemd workflow.
 
-## Current Capabilities
+A separate blue-green workflow provides parallel runtime slots and controlled Nginx traffic switching.
 
-- Nuxt production artifact deployment
+Docker is provided as an alternative deployment strategy.
+
+## Production Capabilities
+
+### Release Deployment
+
 - timestamped release directories
-- `current` symlink switching
+- current symlink switching
 - systemd service management
-- retry-aware HTTP healthchecks
-- post-deployment service validation
-- local validation through `127.0.0.1`
-- optional public endpoint validation
-- rollback tooling
-- release retention cleanup
-- Nginx reverse proxy example
-- Apache reverse proxy example
-- Docker deployment example
-- log rotation tooling
-- deployment runbook
-- troubleshooting documentation
-- GitHub Actions validation
-- ShellCheck validation
+- shared deployment locking
+- artifact SHA-256 tracking
+- source commit metadata
+- release lifecycle metadata
+- release cleanup
+
+### Validation
+
+- systemd service-state validation
+- retry-aware HTTP health checks
+- local validation through 127.0.0.1
+- optional PUBLIC_URL validation
+- configurable HTTP status
+- configurable timeout and retries
+- deployment summary output
+
+### Rollback
+
+- previous-release selection
+- explicit rollback targets
+- rollback validation
+- automatic rollback after failed deployment
+- original-release restoration after failed rollback
+- integration testing
+
+### Blue-Green Deployment
+
+- automatic active-slot detection
+- blue and green systemd instances
+- inactive-slot deployment
+- independent runtime ports
+- readiness validation before traffic switch
+- Nginx upstream switching
+- nginx -t validation
+- graceful Nginx reload
+- optional public validation
+- automatic traffic restoration
+- explicit traffic rollback
+- integration testing
+
+Default slots:
+
+blue: 127.0.0.1:3001
+green: 127.0.0.1:3002
+
+### Runtime Security
+
+The repository includes:
+
+- non-root systemd runtime
+- restricted sudo policy
+- restrictive umask
+- systemd sandboxing
+- capability removal
+- filesystem protection
+- kernel protection
+- secure release ownership
+- secure configuration ownership
+- secret-file permission validation
+
+### Secret Management
+
+Production secrets remain outside release directories.
+
+Recommended secret file:
+
+/etc/nuxt-app/nuxt-app.env
+
+Recommended ownership:
+
+root:deploy
+
+Recommended mode:
+
+0640
+
+### Docker
+
+The Docker example includes:
+
+- multi-stage build
+- non-root runtime
+- read-only filesystem
+- dropped capabilities
+- no-new-privileges
+- healthcheck
+- loopback-only published port
+- PID limit
+- tmpfs
+- real CI image build
+- runtime user validation
+- live container smoke test
+
+### Deployment Audit
+
+Deployment operations emit append-only JSON Lines events.
+
+Default location:
+
+/var/log/nuxt-app/deployments.jsonl
+
+Events include:
+
+- timestamp
+- operation
+- result
+- release
+- previous release
+- slot
+- previous slot
+- source commit
+- actor
+- message
+
+### Deployment Metrics
+
+Deployment audit events can be exported as Prometheus textfile metrics.
+
+Metrics include:
+
+- deployment event counters
+- latest success timestamp
+- latest failure timestamp
+- audit event count
+
+### Alerting
+
+The repository includes:
+
+- Prometheus deployment alerts
+- deployment failure alerts
+- rollback alerts
+- missing metrics alerts
+- unresolved failure alerts
+- Alertmanager routing example
+
+### Incident Response
+
+Operational support includes:
+
+- incident-response runbook
+- secret-safe diagnostic collection
+- release inspection
+- blue-green slot inspection
+- systemd diagnostics
+- Nginx validation
+- health diagnostics
+- deployment audit inspection
+- rollback procedures
+- recovery verification
+- post-incident review guidance
 
 ## Repository Structure
 
-```text
-.github/workflows/     Repository validation
+.github/workflows/     CI validation
 docs/                  Architecture and operational documentation
-examples/              Runtime and reverse-proxy examples
+examples/              Runtime, proxy, Docker, and monitoring examples
 scripts/               Deployment and operational tooling
-```
+tests/config/          Configuration policy tests
+tests/integration/     Deployment integration tests
+tests/fixtures/        Deterministic test fixtures
 
-## Architecture
+## Standard Deployment
 
-```text
-Git Repository
-     |
-     v
-CI Validation
-     |
-     v
-Build Artifact
-     |
-     v
-Timestamped Release
-     |
-     v
-current Symlink
-     |
-     v
-systemd
-     |
-     v
-Nuxt Runtime
-     |
-     v
-Reverse Proxy
-     |
-     v
-Users
-```
-
-See `docs/architecture.md`.
-
-## Deployment
-
-Standard release flow:
-
-```text
 Build artifact
-   |
-   v
-Create release directory
-   |
-   v
-Extract artifact
-   |
-   v
-Switch current symlink
-   |
-   v
-Restart application service
-   |
-   v
-Validate systemd state
-   |
-   v
-Validate local endpoint
-   |
-   v
-Optionally validate public endpoint
-```
+    |
+    v
+Deployment lock
+    |
+    v
+Timestamped release
+    |
+    v
+Release metadata
+    |
+    v
+current symlink
+    |
+    v
+systemd restart
+    |
+    v
+service validation
+    |
+    v
+127.0.0.1 health validation
+    |
+    v
+optional PUBLIC_URL validation
+    |
+    +--> success
+    |
+    +--> automatic rollback
+
+Run:
+
+./scripts/deploy.sh build.zip
 
 Example:
 
-```bash
-./scripts/deploy.sh build.zip
-```
-
-Configuration:
-
-```bash
-APP_NAME=nuxt-app APP_PORT=3000 HEALTH_PATH=/ ./scripts/deploy.sh build.zip
-```
-
-Optional public validation:
-
-```bash
-PUBLIC_URL=https://example.com ./scripts/deploy.sh build.zip
-```
-
-See `docs/deployment.md`.
-
-## Validation
-
-Deployment validation checks:
-
-1. configured systemd service is active
-2. application responds through `127.0.0.1`
-3. optional public endpoint responds successfully
-
-Healthchecks support retries, timeout configuration, and expected HTTP status configuration.
+APP_NAME=nuxt-app APP_PORT=3000 HEALTH_PATH=/ PUBLIC_URL=https://example.com ./scripts/deploy.sh build.zip
 
 ## Rollback
 
-Rollback tooling preserves the release-based deployment model and switches the active symlink back to a previous release.
+Automatic previous release:
 
-See:
+./scripts/rollback.sh
 
-```text
-docs/rollback.md
-scripts/rollback.sh
-```
+Explicit release:
 
-## Reverse Proxy
+./scripts/rollback.sh <release-id>
 
-Examples are available for:
+## Blue-Green Deployment
 
-- Nginx
-- Apache
+Run:
 
-## Docker
+./scripts/blue-green-deploy.sh build.zip
 
-A Docker deployment example is included as an alternative deployment pattern.
+Traffic rollback:
 
-Docker is separate from the primary systemd release workflow.
+./scripts/blue-green-rollback.sh
 
-## Blue/Green Status
+## Validation
 
-The repository contains:
+Run:
 
-- a blue/green strategy document
-- an Nginx blue/green configuration example
+APP_NAME=nuxt-app APP_PORT=3000 HEALTH_PATH=/ ./scripts/validate-deployment.sh
 
-End-to-end automated blue/green traffic switching is still a roadmap item.
+## Deployment Audit
 
-## Zero-Downtime Status
+Show:
 
-A single systemd service restart is not considered sufficient evidence of guaranteed zero downtime.
+./scripts/audit-releases.sh show
 
-True zero-downtime deployment remains a roadmap item and requires parallel runtime targets plus controlled reverse-proxy traffic switching.
+Verify:
 
-## CI
+./scripts/audit-releases.sh verify
 
-GitHub Actions currently validates:
+## Deployment Metrics
+
+./scripts/export-deployment-metrics.sh
+
+## Incident Diagnostics
+
+./scripts/collect-incident-diagnostics.sh
+
+## CI Validation
+
+GitHub Actions validates:
 
 - Bash syntax
 - ShellCheck
-- required repository files
-- executable script permissions
+- runtime dependencies
+- required files
+- executable permissions
+- release metadata tooling
+- deployment event tooling
+- deployment metrics tooling
+- Nginx configuration
+- blue-green Nginx configuration
+- Apache configuration
+- systemd units
+- systemd hardening
+- sudoers policy
+- deployment permissions
+- secret management
+- deployment alerts
+- Prometheus rules
+- Alertmanager configuration
+- incident-response policy
+- Docker Compose
+- Docker image build
+- Docker runtime user
+- Docker health smoke test
+- deployment metrics integration
+- deployment audit integration
+- blue-green integration
+- deployment and rollback integration
 
-Additional integration tests and configuration validation are planned.
+## Documentation
 
-## Operations
+See:
 
-Operational documentation includes:
-
-- architecture
-- deployment
-- rollback
-- troubleshooting
-- systemd
-- Nginx
-- Apache
-- log rotation
-- Docker deployment
-- deployment runbook
+docs/architecture.md
+docs/deployment.md
+docs/rollback.md
+docs/deployment-locking.md
+docs/release-metadata.md
+docs/docker-deployment.md
+docs/systemd-security.md
+docs/deployment-user-security.md
+docs/secret-management.md
+docs/blue-green.md
+docs/deployment-audit.md
+docs/deployment-metrics.md
+docs/deployment-alerting.md
+docs/incident-response.md
 
 ## Roadmap
 
-Next production-grade improvements focus on:
+The production-hardening roadmap is complete.
 
-- automatic rollback safety
-- release metadata
-- deployment locking
-- integration tests
-- configuration validation
-- security hardening
-- true blue/green traffic switching
-- observability
-- release auditability
+Future improvements should be driven by real operational requirements rather than artificial feature growth.
 
-## Philosophy
+## Engineering Principles
 
-Production tooling should be simple, observable, recoverable, testable, and honest about its guarantees.
+Production deployment tooling should be:
+
+- simple
+- explicit
+- observable
+- testable
+- recoverable
+- least-privileged
+- honest about failure boundaries
 
 ## License
 

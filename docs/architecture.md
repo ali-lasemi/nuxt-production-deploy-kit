@@ -2,244 +2,340 @@
 
 ## Overview
 
-This repository implements a release-based deployment model for Nuxt applications running as Node.js processes behind a reverse proxy and managed by systemd.
+This repository provides three production deployment models:
 
-The primary production path is:
+1. release-based systemd deployment
+2. blue-green systemd deployment with Nginx traffic switching
+3. hardened Docker deployment
 
-```text
-Source Repository
-      |
-      v
-CI Validation
-      |
-      v
-Build Artifact
-      |
-      v
-Timestamped Release
-      |
-      v
-current Symlink
-      |
-      v
-systemd Service
-      |
-      v
-Nuxt Runtime
-      |
-      v
-Reverse Proxy
-      |
-      v
-Users
-```
+The release-based systemd workflow is the primary deployment model.
 
-## CI Validation
+The blue-green workflow provides parallel runtime targets.
 
-GitHub Actions validates repository integrity before changes are considered healthy.
+Docker is an alternative runtime strategy.
 
-Current checks include:
+## Standard Release Layout
 
-- Bash syntax validation
-- ShellCheck static analysis
-- required-file validation
-- executable-bit validation
-
-CI validates deployment tooling and repository structure. It does not claim to perform a live production deployment.
-
-## Release Layout
-
-Deployments use timestamped release directories:
-
-```text
 /opt/nuxt-app/
-├── current -> /opt/nuxt-app/releases/<active-release>
+├── .deployment.lock
+├── current
 └── releases/
     ├── <release-a>/
     ├── <release-b>/
     └── <release-c>/
-```
 
-A new build is extracted into a new release directory before the active symlink is updated.
+Each release contains release metadata.
 
-This preserves previous releases for rollback and separates release artifacts from the active runtime path.
+## Standard Deployment Flow
 
-## Deployment Flow
-
-```text
-build.zip
-   |
-   v
-Create timestamped release
-   |
-   v
+Artifact
+  |
+  v
+Acquire lock
+  |
+  v
+Calculate checksum
+  |
+  v
+Create release
+  |
+  v
 Extract artifact
-   |
-   v
-Update current symlink
-   |
-   v
-Restart systemd service
-   |
-   v
-Validate service state
-   |
-   v
-Validate 127.0.0.1 endpoint
-   |
-   v
-Optionally validate public endpoint
-   |
-   v
-Deployment result
-```
+  |
+  v
+Write metadata
+  |
+  v
+Switch current symlink
+  |
+  v
+Restart systemd
+  |
+  v
+Validate service
+  |
+  v
+Validate 127.0.0.1
+  |
+  v
+Optional PUBLIC_URL validation
+  |
+  +--> success
+  |
+  +--> automatic rollback
 
-## Runtime Model
+## Automatic Rollback
 
-The Nuxt application runs as a Node.js process managed by systemd.
+Before deployment, the current release is recorded.
 
-systemd is responsible for:
+If restart or validation fails:
 
-- process lifecycle
-- restart policy
-- service identity
-- environment configuration
-- application startup
+1. the failed release remains recorded
+2. current is restored to the previous release
+3. systemd is restarted
+4. the restored release is validated
+5. rollback state is recorded
 
-The application port defaults to `3000`.
+## Manual Rollback
+
+Manual rollback supports:
+
+- automatic previous-release selection
+- explicit rollback target
+- target validation
+- restoration of the original release if rollback fails
+
+## Deployment Locking
+
+Deployment and rollback operations use a shared flock lock.
+
+Default:
+
+/opt/nuxt-app/.deployment.lock
+
+This prevents simultaneous state mutations.
+
+## Blue-Green Architecture
+
+Nginx
+  |
+  v
+nuxt_active upstream
+   /          \
+  /            \
+blue          green
+3001          3002
+ |             |
+nuxt-app@blue nuxt-app@green
+ |             |
+blue/current  green/current
+
+## Blue-Green Layout
+
+/opt/nuxt-app/
+├── blue/
+│   ├── current
+│   └── releases/
+├── green/
+│   ├── current
+│   └── releases/
+└── .deployment.lock
+
+## Blue-Green Deployment Flow
+
+Detect active slot
+  |
+  v
+Select inactive slot
+  |
+  v
+Deploy release
+  |
+  v
+Restart inactive instance
+  |
+  v
+Validate inactive slot
+  |
+  v
+Generate Nginx upstream
+  |
+  v
+nginx -t
+  |
+  v
+Graceful reload
+  |
+  v
+Optional PUBLIC_URL validation
+  |
+  +--> success
+  |
+  +--> restore previous traffic
+
+## Runtime Security
+
+The systemd runtime uses:
+
+User=deploy
+Group=deploy
+UMask=0027
+
+Hardening includes:
+
+- NoNewPrivileges
+- PrivateTmp
+- PrivateDevices
+- ProtectSystem=strict
+- ProtectHome
+- ProtectKernelTunables
+- ProtectKernelModules
+- ProtectKernelLogs
+- ProtectControlGroups
+- ProtectClock
+- ProtectHostname
+- RestrictSUIDSGID
+- RestrictRealtime
+- LockPersonality
+- RestrictNamespaces
+- restricted address families
+- no Linux capabilities
+
+## Secrets
+
+Secrets remain outside release directories.
+
+Recommended file:
+
+/etc/nuxt-app/nuxt-app.env
+
+Ownership:
+
+root:deploy
+
+Mode:
+
+0640
 
 ## Reverse Proxy
 
 Nginx and Apache examples are included.
 
-The reverse proxy is responsible for:
+Local deployment health validation uses 127.0.0.1.
 
-- accepting client traffic
-- forwarding requests to the Nuxt runtime
-- forwarding client and protocol headers
-- supporting WebSocket upgrades
-- acting as the external traffic boundary
-
-Local deployment validation bypasses the reverse proxy and always uses `127.0.0.1`.
-
-This isolates application-process health from DNS, TLS, and external network dependencies.
-
-## Post-Deployment Validation
-
-Validation is performed in layers.
-
-### Service validation
-
-The configured systemd service must be active.
-
-### Local application validation
-
-The application is checked through:
-
-```text
-http://127.0.0.1:<APP_PORT><HEALTH_PATH>
-```
-
-The HTTP check supports:
-
-- expected status
-- timeout
-- retries
-- retry delay
-
-### Public validation
-
-When `PUBLIC_URL` is configured, the external endpoint is validated after local validation succeeds.
-
-Public validation is optional.
-
-## Rollback Model
-
-Previous release directories remain available.
-
-Rollback performs:
-
-```text
-Identify previous release
-        |
-        v
-Switch current symlink
-        |
-        v
-Restart service
-        |
-        v
-Validate runtime
-```
-
-Stronger release-state tracking and automatic rollback are separate reliability improvements.
-
-## Release Retention
-
-Old timestamped releases can be removed with the release cleanup script.
-
-Retention remains configurable so recent releases are preserved for rollback while preventing uncontrolled disk growth.
+PUBLIC_URL validation is optional.
 
 ## Docker
 
-The repository includes a Docker deployment example as an alternative runtime strategy.
+The Docker runtime uses:
 
-Docker is separate from the primary systemd release workflow.
+- multi-stage build
+- non-root node user
+- read-only filesystem
+- tmpfs
+- dropped capabilities
+- no-new-privileges
+- loopback-only published port
+- healthcheck
 
-## Blue/Green Status
+## Deployment Audit
 
-The repository currently includes:
+Deployment operations emit structured JSON Lines events.
 
-- a blue/green strategy document
-- an Nginx blue/green configuration example
+Default file:
 
-End-to-end automated blue/green deployment is not yet implemented.
+/var/log/nuxt-app/deployments.jsonl
 
-Production-grade blue/green requires:
+Operations include:
 
-- active environment detection
-- inactive environment deployment
-- readiness validation
-- traffic switching
-- switch verification
-- rollback traffic switching
+- deploy
+- rollback
+- automatic_rollback
+- blue_green_deploy
+- blue_green_rollback
+- blue_green_traffic_rollback
 
-## Zero-Downtime Status
+## Metrics
 
-A single systemd service restart does not guarantee zero downtime.
+Deployment events are converted into Prometheus textfile metrics.
 
-True zero-downtime deployment requires parallel runtime targets and controlled reverse-proxy traffic switching.
+Flow:
 
-Until that workflow is implemented end-to-end, the repository does not claim guaranteed zero-downtime deployment.
+Deployment audit
+  |
+  v
+deployment-metrics.mjs
+  |
+  v
+Prometheus textfile
+  |
+  v
+Node Exporter
+  |
+  v
+Prometheus
+
+## Alerting
+
+Prometheus rules cover:
+
+- deployment failure
+- automatic rollback
+- missing deployment metrics
+- failure newer than success
+
+Alertmanager routing is included as an example.
+
+## Incident Response
+
+Operational recovery includes:
+
+- incident-response runbook
+- diagnostic collection
+- release metadata
+- deployment audit
+- rollback
+- blue-green traffic rollback
+- health validation
+- deployment alerts
+
+## CI Validation
+
+CI validates:
+
+- Bash
+- ShellCheck
+- Nginx
+- Apache
+- systemd
+- systemd hardening
+- sudoers
+- permissions
+- secret policy
+- Prometheus rules
+- Alertmanager
+- Docker Compose
+- Docker build
+- Docker runtime
+- deployment metrics
+- deployment audit
+- standard deploy and rollback
+- blue-green deployment
 
 ## Failure Boundaries
 
-### Artifact failure
+Artifact failure:
+Detected before activation.
 
-Detected before service restart when the deployment artifact is unavailable.
+Service failure:
+Detected during restart and service validation.
 
-### Service failure
+Runtime failure:
+Detected through local health validation.
 
-Detected through systemd state validation.
+Public routing failure:
+Detected through optional PUBLIC_URL validation.
 
-### Application failure
+Nginx failure:
+Detected with nginx -t.
 
-Detected through local `127.0.0.1` health validation.
+Blue-green readiness failure:
+Detected before traffic switching.
 
-### External-path failure
+Rollback failure:
+Detected through recovery validation.
 
-Detected through optional `PUBLIC_URL` validation.
+Concurrent deployment:
+Rejected through the shared lock.
 
-### Recovery
+## Engineering Principles
 
-Previous release recovery is handled through rollback tooling.
-
-## Design Principles
-
-- simple deployment paths over unnecessary orchestration
-- explicit failure handling
-- previous-release preservation
 - local validation before public validation
-- reusable operational tooling
-- documentation that matches implementation
-- no production capability claims without executable support
+- inactive preparation before traffic switching
+- executable rollback
+- explicit failure handling
+- least privilege
+- reproducible CI
+- previous-state preservation
+- structured operational evidence
+- no unsupported production claims
