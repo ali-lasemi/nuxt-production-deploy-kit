@@ -3,6 +3,9 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
+# shellcheck source=deployment-events.sh
+source "$SCRIPT_DIR/deployment-events.sh"
+
 APP_NAME="${APP_NAME:-nuxt-app}"
 APP_DIR="${APP_DIR:-/opt/nuxt-app}"
 APP_PORT="${APP_PORT:-3000}"
@@ -100,7 +103,7 @@ rollback_failed_deployment() {
   metadata_update "rollback=successful"
 
   echo
-  echo "Automatic rollback completed successfully."
+  emit_deployment_event "automatic_rollback" "success" "$PREVIOUS_RELEASE" "$NEW_RELEASE" "" "" "Previous release restored after failed deployment."`n  echo "Automatic rollback completed successfully."
   echo "Active release: $PREVIOUS_RELEASE"
 
   return 0
@@ -135,7 +138,7 @@ if [[ -n "$PREVIOUS_RELEASE" ]]; then
   PREVIOUS_RELEASE_NAME="$(basename -- "$PREVIOUS_RELEASE")"
 fi
 
-echo "Creating release directory: $NEW_RELEASE"
+emit_deployment_event "deploy" "started" "$NEW_RELEASE" "$PREVIOUS_RELEASE" "" "" "Deployment started."`n`necho "Creating release directory: $NEW_RELEASE"
 mkdir -p "$NEW_RELEASE"
 
 metadata_create
@@ -166,7 +169,7 @@ if ! sudo systemctl restart "$APP_NAME"; then
     exit 1
   fi
 
-  echo "CRITICAL: Deployment failed and automatic rollback did not recover the service."
+  emit_deployment_event "deploy" "critical_failure" "$NEW_RELEASE" "$PREVIOUS_RELEASE" "" "" "Deployment and automatic rollback failed."`n  echo "CRITICAL: Deployment failed and automatic rollback did not recover the service."
   exit 2
 fi
 
@@ -179,7 +182,7 @@ if ! validate_runtime; then
     exit 1
   fi
 
-  echo "CRITICAL: Deployment failed and automatic rollback did not recover the service."
+  emit_deployment_event "deploy" "critical_failure" "$NEW_RELEASE" "$PREVIOUS_RELEASE" "" "" "Deployment and automatic rollback failed."`n  echo "CRITICAL: Deployment failed and automatic rollback did not recover the service."
   exit 2
 fi
 
@@ -188,6 +191,6 @@ metadata_update "status=active" "validation=passed" "rollback=not_required"
 node "$SCRIPT_DIR/release-metadata.mjs" verify "$METADATA_FILE"
 
 echo
-echo "Deployment completed successfully."
+emit_deployment_event "deploy" "success" "$NEW_RELEASE" "$PREVIOUS_RELEASE" "" "" "Deployment completed successfully."`n`necho "Deployment completed successfully."
 echo "Release: $NEW_RELEASE"
 echo "Metadata: $METADATA_FILE"

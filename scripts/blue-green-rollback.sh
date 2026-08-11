@@ -3,6 +3,9 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
+# shellcheck source=deployment-events.sh
+source "$SCRIPT_DIR/deployment-events.sh"
+
 APP_DIR="${APP_DIR:-/opt/nuxt-app}"
 
 BLUE_PORT="${BLUE_PORT:-3001}"
@@ -81,7 +84,7 @@ if [[ ! -e "$TARGET_CURRENT" ]]; then
   exit 1
 fi
 
-echo "Current traffic slot: $ACTIVE_SLOT"
+emit_deployment_event "blue_green_rollback" "started" "" "" "$TARGET_SLOT" "$ACTIVE_SLOT" "Traffic rollback started."`n`necho "Current traffic slot: $ACTIVE_SLOT"
 echo "Rollback traffic slot: $TARGET_SLOT"
 
 if ! "$SCRIPT_DIR/healthcheck.sh" "http://127.0.0.1:${TARGET_PORT}${HEALTH_PATH}"; then
@@ -104,6 +107,6 @@ fi
 sudo "$NGINX_BIN" -s reload
 
 echo
-echo "Traffic rollback completed successfully."
+emit_deployment_event "blue_green_rollback" "success" "" "" "$TARGET_SLOT" "$ACTIVE_SLOT" "Traffic rollback completed successfully."`n`necho "Traffic rollback completed successfully."
 echo "Active slot: $TARGET_SLOT"
 echo "Active port: $TARGET_PORT"

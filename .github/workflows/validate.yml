@@ -62,6 +62,7 @@ jobs:
           test -f docs/systemd-security.md
           test -f docs/deployment-user-security.md
           test -f docs/secret-management.md
+          test -f docs/deployment-audit.md
           test -f examples/nginx/nuxt.conf
           test -f examples/apache/nuxt-vhost.conf
           test -f examples/systemd/nuxt-app.service
@@ -76,8 +77,11 @@ jobs:
           test -f examples/blue-green/green.env
           test -f scripts/validate-deployment.sh
           test -f scripts/release-metadata.mjs
+          test -f scripts/deployment-event.mjs
+          test -f scripts/deployment-events.sh
           test -f tests/integration/deploy-rollback.sh
           test -f tests/integration/blue-green.sh
+          test -f tests/integration/deployment-audit.sh
           test -f tests/config/systemd-hardening.sh
           test -f tests/config/deployment-permissions.sh
           test -f tests/config/secret-management.sh
@@ -97,13 +101,19 @@ jobs:
           test -x scripts/cleanup-releases.sh
           test -x scripts/bootstrap-host.sh
           test -x scripts/validate-secret-file.sh
+          test -x scripts/audit-releases.sh
           test -x tests/integration/deploy-rollback.sh
           test -x tests/integration/blue-green.sh
+          test -x tests/integration/deployment-audit.sh
           test -x tests/config/systemd-hardening.sh
           test -x tests/config/deployment-permissions.sh
           test -x tests/config/secret-management.sh
 
       - name: Validate release metadata tool
+        run: node --check scripts/release-metadata.mjs
+
+      - name: Validate deployment event tool
+        run: node --check scripts/deployment-event.mjs
         run: node --check scripts/release-metadata.mjs
 
       - name: Validate Nginx configuration
@@ -177,6 +187,9 @@ jobs:
 
           docker logs "$container_id"
           exit 1
+
+      - name: Run deployment audit integration tests
+        run: tests/integration/deployment-audit.sh
 
       - name: Run blue-green integration tests
         run: tests/integration/blue-green.sh

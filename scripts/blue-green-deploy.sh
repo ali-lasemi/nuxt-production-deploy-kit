@@ -3,6 +3,9 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
+# shellcheck source=deployment-events.sh
+source "$SCRIPT_DIR/deployment-events.sh"
+
 APP_NAME="${APP_NAME:-nuxt-app}"
 APP_DIR="${APP_DIR:-/opt/nuxt-app}"
 
@@ -139,7 +142,7 @@ TARGET_CURRENT="$TARGET_ROOT/current"
 
 mkdir -p "$TARGET_RELEASES"
 
-echo "Active slot: $ACTIVE_SLOT"
+emit_deployment_event "blue_green_deploy" "started" "$TARGET_RELEASE" "" "$TARGET_SLOT" "$ACTIVE_SLOT" "Blue-green deployment started."`n`necho "Active slot: $ACTIVE_SLOT"
 echo "Active port: $ACTIVE_PORT"
 echo "Target slot: $TARGET_SLOT"
 echo "Target port: $TARGET_PORT"
@@ -214,13 +217,13 @@ if [[ -n "$PUBLIC_URL" ]]; then
 
     restore_upstream "$UPSTREAM_BACKUP"
 
-    echo "Traffic rollback completed."
+    emit_deployment_event "blue_green_traffic_rollback" "success" "" "" "$ACTIVE_SLOT" "$TARGET_SLOT" "Traffic restored after public validation failure."`n    echo "Traffic rollback completed."
     exit 1
   fi
 fi
 
 echo
-echo "Blue-green deployment completed successfully."
+emit_deployment_event "blue_green_deploy" "success" "$TARGET_RELEASE" "" "$TARGET_SLOT" "$ACTIVE_SLOT" "Traffic switched successfully."`n`necho "Blue-green deployment completed successfully."
 echo "Previous slot: $ACTIVE_SLOT"
 echo "Active slot: $TARGET_SLOT"
 echo "Active port: $TARGET_PORT"
