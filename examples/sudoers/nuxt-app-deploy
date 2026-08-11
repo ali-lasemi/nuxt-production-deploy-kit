@@ -1,0 +1,12 @@
+# Validate before installation:
+#   visudo -cf examples/sudoers/nuxt-app-deploy
+#
+# Install as:
+#   /etc/sudoers.d/nuxt-app-deploy
+#
+# Required mode:
+#   0440
+
+Cmnd_Alias NUXT_APP_SERVICE = /usr/bin/systemctl restart nuxt-app.service, /usr/bin/systemctl restart nuxt-app
+
+deploy ALL=(root) NOPASSWD: NUXT_APP_SERVICE

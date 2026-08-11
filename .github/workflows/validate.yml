@@ -19,7 +19,7 @@ jobs:
       - name: Install validation tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y shellcheck nginx apache2 nodejs
+          sudo apt-get install -y shellcheck nginx apache2 nodejs sudo
 
       - name: Validate shell syntax
         run: |
@@ -60,9 +60,11 @@ jobs:
           test -f docs/ci-configuration-validation.md
           test -f docs/docker-deployment.md
           test -f docs/systemd-security.md
+          test -f docs/deployment-user-security.md
           test -f examples/nginx/nuxt.conf
           test -f examples/apache/nuxt-vhost.conf
           test -f examples/systemd/nuxt-app.service
+          test -f examples/sudoers/nuxt-app-deploy
           test -f examples/env/.env.production.example
           test -f examples/docker/Dockerfile
           test -f examples/docker/docker-compose.yml
@@ -70,6 +72,7 @@ jobs:
           test -f scripts/release-metadata.mjs
           test -f tests/integration/deploy-rollback.sh
           test -f tests/config/systemd-hardening.sh
+          test -f tests/config/deployment-permissions.sh
           test -f tests/fixtures/docker-app/package.json
           test -f tests/fixtures/docker-app/package-lock.json
           test -f tests/fixtures/docker-app/build.mjs
@@ -82,8 +85,10 @@ jobs:
           test -x scripts/validate-deployment.sh
           test -x scripts/rotate-logs.sh
           test -x scripts/cleanup-releases.sh
+          test -x scripts/bootstrap-host.sh
           test -x tests/integration/deploy-rollback.sh
           test -x tests/config/systemd-hardening.sh
+          test -x tests/config/deployment-permissions.sh
 
       - name: Validate release metadata tool
         run: node --check scripts/release-metadata.mjs
@@ -110,6 +115,12 @@ jobs:
 
       - name: Validate systemd hardening policy
         run: tests/config/systemd-hardening.sh
+
+      - name: Validate deployment sudoers policy
+        run: sudo visudo -cf examples/sudoers/nuxt-app-deploy
+
+      - name: Validate deployment identity and permissions policy
+        run: tests/config/deployment-permissions.sh
 
       - name: Validate Docker Compose configuration
         working-directory: examples/docker
