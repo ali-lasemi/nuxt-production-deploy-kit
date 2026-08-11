@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+No unreleased changes.
+
+## v1.0.0 - 2026-08-11
+
 ### Added
 
 - Release-based production deployment
